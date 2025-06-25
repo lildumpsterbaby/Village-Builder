@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Village Builder - Incremental Idle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #ecf0f1;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #f39c12;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 2.5em;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .section {
+            background: rgba(52, 73, 94, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #7f8c8d;
+        }
+        
+        .section h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 5px;
+        }
+        
+        .resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .resource {
+            background: rgba(39, 174, 96, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #27ae60;
+        }
+        
+        .resource-name {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 0.9em;
+        }
+        
+        .resource-amount {
+            font-size: 1.2em;
+            margin-top: 5px;
+        }
+        
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+            border-color: #5dade2;
+        }
+        
+        .action-btn:disabled {
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .building {
+            background: rgba(230, 126, 34, 0.2);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #e67e22;
+        }
+        
+        .building-name {
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 5px;
+        }
+        
+        .building-info {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #bdc3c7;
+        }
+        
+        .population-info {
+            background: rgba(155, 89, 182, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #9b59b6;
+            margin-bottom: 20px;
+        }
+        
+        .job-assignment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 5px;
+        }
+        
+        .job-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .job-btn {
+            background: #34495e;
+            color: white;
+            border: 1px solid #7f8c8d;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        
+        .job-btn:hover {
+            background: #4a6741;
+        }
+        
+        .warning {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: #e74c3c;
+        }
+        
+        .auto-resource {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏘️ Village Builder</h1>
+        
+        <div class="game-area">
+            <div class="section">
+                <h2>📊 Resources</h2>
+                <div class="resources">
+                    <div class="resource">
+                        <div class="resource-name">🍖 Food</div>
+                        <div class="resource-amount" id="food">0</div>
+                        <div class="auto-resource" id="food-rate">+0/sec</div>
+                    </div>
+                    <div class="resource">
+                        <div class="resource-name">🪵 Wood</div>
+                        <div class="resource-amount" id="wood">0</div>
+                        <div class="auto-resource" id="wood-rate">+0/sec</div>
+                    </div>
+                    <div class="resource">
+                        <div class="resource-name">🪨 Stone</div>
+                        <div class="resource-amount" id="stone">0</div>
+                        <div class="auto-resource" id="stone-rate">+0/sec</div>
+                    </div>
+                    <div class="resource">
+                        <div class="resource-name">👥 People</div>
+                        <div class="resource-amount" id="people">0</div>
+                    </div>
+                </div>
+                
+                <div class="population-info">
+                    <div><strong>Population Status:</strong></div>
+                    <div>Housed: <span id="housed">0</span> / <span id="total-people">0</span></div>
+                    <div>Food Consumption: <span id="food-consumption">0</span>/sec</div>
+                    <div id="homeless-warning" class="warning" style="display: none;">
+                        ⚠️ Some people are homeless! Build more houses.
+                    </div>
+                    <div id="starving-warning" class="warning" style="display: none;">
+                        ⚠️ People are starving! You need more food production.
+                    </div>
+                </div>
+                
+                <h2>⚡ Actions</h2>
+                <div class="actions">
+                    <button class="action-btn" onclick="gatherFood()">
+                        🍖 Gather Food (Click for +1)
+                    </button>
+                    <button class="action-btn" id="buy-wood-btn" onclick="buyWood()" disabled>
+                        🪵 Trade for Wood (Cost: 5 Food)
+                    </button>
+                    <button class="action-btn" id="buy-stone-btn" onclick="buyStone()" disabled>
+                        🪨 Gather Stone (Cost: 3 Wood)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🏗️ Buildings</h2>
+                <div class="building">
+                    <div class="building-name">🏠 Houses</div>
+                    <div class="building-info">
+                        Owned: <span id="houses">0</span><br>
+                        Cost: <span id="house-cost-wood">10</span> Wood + <span id="house-cost-stone">5</span> Stone<br>
+                        Houses 2 people each
+                    </div>
+                    <button class="action-btn" id="build-house-btn" onclick="buildHouse()" disabled>
+                        Build House
+                    </button>
+                </div>
+                
+                <div class="building">
+                    <div class="building-name">🌾 Farms</div>
+                    <div class="building-info">
+                        Owned: <span id="farms">0</span><br>
+                        Cost: <span id="farm-cost-wood">15</span> Wood + <span id="farm-cost-stone">8</span> Stone<br>
+                        Produces food automatically
+                    </div>
+                    <button class="action-btn" id="build-farm-btn" onclick="buildFarm()" disabled>
+                        Build Farm
+                    </button>
+                </div>
+                
+                <div class="building">
+                    <div class="building-name">🪓 Lumber Mills</div>
+                    <div class="building-info">
+                        Owned: <span id="lumber-mills">0</span><br>
+                        Cost: <span id="lumber-cost-wood">25</span> Wood + <span id="lumber-cost-stone">15</span> Stone<br>
+                        Produces wood automatically
+                    </div>
+                    <button class="action-btn" id="build-lumber-btn" onclick="buildLumberMill()" disabled>
+                        Build Lumber Mill
+                    </button>
+                </div>
+                
+                <div class="building">
+                    <div class="building-name">⛏️ Quarries</div>
+                    <div class="building-info">
+                        Owned: <span id="quarries">0</span><br>
+                        Cost: <span id="quarry-cost-wood">35</span> Wood + <span id="quarry-cost-stone">25</span> Stone<br>
+                        Produces stone automatically
+                    </div>
+                    <button class="action-btn" id="build-quarry-btn" onclick="buildQuarry()" disabled>
+                        Build Quarry
+                    </button>
+                </div>
+                
+                <h2>👷 Job Assignment</h2>
+                <div id="job-assignments">
+                    <div class="job-assignment" id="farmer-job" style="display: none;">
+                        <span>🌾 Farmers: <span id="farmers">0</span> / <span id="max-farmers">0</span></span>
+                        <div class="job-controls">
+                            <button class="job-btn" onclick="assignJob('farmer', -1)">-</button>
+                            <button class="job-btn" onclick="assignJob('farmer', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="job-assignment" id="lumberjack-job" style="display: none;">
+                        <span>🪓 Lumberjacks: <span id="lumberjacks">0</span> / <span id="max-lumberjacks">0</span></span>
+                        <div class="job-controls">
+                            <button class="job-btn" onclick="assignJob('lumberjack', -1)">-</button>
+                            <button class="job-btn" onclick="assignJob('lumberjack', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="job-assignment" id="miner-job" style="display: none;">
+                        <span>⛏️ Miners: <span id="miners">0</span> / <span id="max-miners">0</span></span>
+                        <div class="job-controls">
+                            <button class="job-btn" onclick="assignJob('miner', -1)">-</button>
+                            <button class="job-btn" onclick="assignJob('miner', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="job-assignment">
+                        <span>😴 Unemployed: <span id="unemployed">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            resources: {
+                food: 0,
+                wood: 0,
+                stone: 0,
+                people: 0
+            },
+            buildings: {
+                houses: 0,
+                farms: 0,
+                lumberMills: 0,
+                quarries: 0
+            },
+            jobs: {
+                farmers: 0,
+                lumberjacks: 0,
+                miners: 0
+            },
+            costs: {
+                house: { wood: 10, stone: 5 },
+                farm: { wood: 15, stone: 8 },
+                lumberMill: { wood: 25, stone: 15 },
+                quarry: { wood: 35, stone: 25 }
+            }
+        };
+
+        // Manual resource gathering
+        function gatherFood() {
+            gameState.resources.food++;
+            updateDisplay();
+        }
+
+        function buyWood() {
+            if (gameState.resources.food >= 5) {
+                gameState.resources.food -= 5;
+                gameState.resources.wood++;
+                updateDisplay();
+            }
+        }
+
+        function buyStone() {
+            if (gameState.resources.wood >= 3) {
+                gameState.resources.wood -= 3;
+                gameState.resources.stone++;
+                updateDisplay();
+            }
+        }
+
+        // Building functions
+        function buildHouse() {
+            const cost = gameState.costs.house;
+            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
+                gameState.resources.wood -= cost.wood;
+                gameState.resources.stone -= cost.stone;
+                gameState.buildings.houses++;
+                gameState.resources.people += 2; // Each house brings 2 people
+                
+                // Increase cost for next house
+                gameState.costs.house.wood = Math.floor(gameState.costs.house.wood * 1.2);
+                gameState.costs.house.stone = Math.floor(gameState.costs.house.stone * 1.2);
+                
+                updateDisplay();
+            }
+        }
+
+        function buildFarm() {
+            const cost = gameState.costs.farm;
+            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
+                gameState.resources.wood -= cost.wood;
+                gameState.resources.stone -= cost.stone;
+                gameState.buildings.farms++;
+                
+                // Increase cost for next farm
+                gameState.costs.farm.wood = Math.floor(gameState.costs.farm.wood * 1.15);
+                gameState.costs.farm.stone = Math.floor(gameState.costs.farm.stone * 1.15);
+                
+                updateDisplay();
+            }
+        }
+
+        function buildLumberMill() {
+            const cost = gameState.costs.lumberMill;
+            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
+                gameState.resources.wood -= cost.wood;
+                gameState.resources.stone -= cost.stone;
+                gameState.buildings.lumberMills++;
+                
+                // Increase cost for next lumber mill
+                gameState.costs.lumberMill.wood = Math.floor(gameState.costs.lumberMill.wood * 1.15);
+                gameState.costs.lumberMill.stone = Math.floor(gameState.costs.lumberMill.stone * 1.15);
+                
+                updateDisplay();
+            }
+        }
+
+        function buildQuarry() {
+            const cost = gameState.costs.quarry;
+            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
+                gameState.resources.wood -= cost.wood;
+                gameState.resources.stone -= cost.stone;
+                gameState.buildings.quarries++;
+                
+                // Increase cost for next quarry
+                gameState.costs.quarry.wood = Math.floor(gameState.costs.quarry.wood * 1.15);
+                gameState.costs.quarry.stone = Math.floor(gameState.costs.quarry.stone * 1.15);
+                
+                updateDisplay();
+            }
+        }
+
+        // Job assignment
+        function assignJob(jobType, change) {
+            const unemployed = getUnemployedCount();
+            const maxWorkers = getMaxWorkersForJob(jobType);
+            
+            if (change > 0 && unemployed > 0 && gameState.jobs[jobType + 's'] < maxWorkers) {
+                gameState.jobs[jobType + 's']++;
+            } else if (change < 0 && gameState.jobs[jobType + 's'] > 0) {
+                gameState.jobs[jobType + 's']--;
+            }
+            
+            updateDisplay();
+        }
+
+        function getMaxWorkersForJob(jobType) {
+            switch(jobType) {
+                case 'farmer': return gameState.buildings.farms * 2; // 2 farmers per farm
+                case 'lumberjack': return gameState.buildings.lumberMills * 2; // 2 lumberjacks per mill
+                case 'miner': return gameState.buildings.quarries * 2; // 2 miners per quarry
+                default: return 0;
+            }
+        }
+
+        function getUnemployedCount() {
+            return gameState.resources.people - gameState.jobs.farmers - gameState.jobs.lumberjacks - gameState.jobs.miners;
+        }
+
+        // Resource production
+        function calculateResourceRates() {
+            const rates = { food: 0, wood: 0, stone: 0 };
+            
+            // Building production
+            rates.food += gameState.buildings.farms * 0.5;
+            rates.wood += gameState.buildings.lumberMills * 0.3;
+            rates.stone += gameState.buildings.quarries * 0.2;
+            
+            // Worker production
+            rates.food += gameState.jobs.farmers * 0.8;
+            rates.wood += gameState.jobs.lumberjacks * 0.6;
+            rates.stone += gameState.jobs.miners * 0.4;
+            
+            // Food consumption
+            rates.food -= gameState.resources.people * 0.1;
+            
+            return rates;
+        }
+
+        // Update display
+        function updateDisplay() {
+            // Update resources
+            document.getElementById('food').textContent = Math.floor(gameState.resources.food);
+            document.getElementById('wood').textContent = Math.floor(gameState.resources.wood);
+            document.getElementById('stone').textContent = Math.floor(gameState.resources.stone);
+            document.getElementById('people').textContent = gameState.resources.people;
+            
+            // Update rates
+            const rates = calculateResourceRates();
+            document.getElementById('food-rate').textContent = `${rates.food >= 0 ? '+' : ''}${rates.food.toFixed(1)}/sec`;
+            document.getElementById('wood-rate').textContent = `${rates.wood >= 0 ? '+' : ''}${rates.wood.toFixed(1)}/sec`;
+            document.getElementById('stone-rate').textContent = `${rates.stone >= 0 ? '+' : ''}${rates.stone.toFixed(1)}/sec`;
+            
+            // Update buildings
+            document.getElementById('houses').textContent = gameState.buildings.houses;
+            document.getElementById('farms').textContent = gameState.buildings.farms;
+            document.getElementById('lumber-mills').textContent = gameState.buildings.lumberMills;
+            document.getElementById('quarries').textContent = gameState.buildings.quarries;
+            
+            // Update costs
+            document.getElementById('house-cost-wood').textContent = gameState.costs.house.wood;
+            document.getElementById('house-cost-stone').textContent = gameState.costs.house.stone;
+            document.getElementById('farm-cost-wood').textContent = gameState.costs.farm.wood;
+            document.getElementById('farm-cost-stone').textContent = gameState.costs.farm.stone;
+            document.getElementById('lumber-cost-wood').textContent = gameState.costs.lumberMill.wood;
+            document.getElementById('lumber-cost-stone').textContent = gameState.costs.lumberMill.stone;
+            document.getElementById('quarry-cost-wood').textContent = gameState.costs.quarry.wood;
+            document.getElementById('quarry-cost-stone').textContent = gameState.costs.quarry.stone;
+            
+            // Update job assignments and visibility
+            document.getElementById('farmers').textContent = gameState.jobs.farmers;
+            document.getElementById('lumberjacks').textContent = gameState.jobs.lumberjacks;
+            document.getElementById('miners').textContent = gameState.jobs.miners;
+            document.getElementById('unemployed').textContent = getUnemployedCount();
+            
+            // Update max workers display
+            document.getElementById('max-farmers').textContent = getMaxWorkersForJob('farmer');
+            document.getElementById('max-lumberjacks').textContent = getMaxWorkersForJob('lumberjack');
+            document.getElementById('max-miners').textContent = getMaxWorkersForJob('miner');
+            
+            // Show/hide job assignments based on buildings
+            document.getElementById('farmer-job').style.display = gameState.buildings.farms > 0 ? 'flex' : 'none';
+            document.getElementById('lumberjack-job').style.display = gameState.buildings.lumberMills > 0 ? 'flex' : 'none';
+            document.getElementById('miner-job').style.display = gameState.buildings.quarries > 0 ? 'flex' : 'none';
+            
+            // Update population info
+            const housed = Math.min(gameState.resources.people, gameState.buildings.houses * 2);
+            document.getElementById('housed').textContent = housed;
+            document.getElementById('total-people').textContent = gameState.resources.people;
+            document.getElementById('food-consumption').textContent = (gameState.resources.people * 0.1).toFixed(1);
+            
+            // Show warnings
+            const homelessWarning = document.getElementById('homeless-warning');
+            const starvingWarning = document.getElementById('starving-warning');
+            
+            if (gameState.resources.people > gameState.buildings.houses * 2) {
+                homelessWarning.style.display = 'block';
+            } else {
+                homelessWarning.style.display = 'none';
+            }
+            
+            if (rates.food < 0) {
+                starvingWarning.style.display = 'block';
+            } else {
+                starvingWarning.style.display = 'none';
+            }
+            
+            // Update button states
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            // Trading buttons
+            document.getElementById('buy-wood-btn').disabled = gameState.resources.food < 5;
+            document.getElementById('buy-stone-btn').disabled = gameState.resources.wood < 3;
+            
+            // Building buttons
+            const houseCost = gameState.costs.house;
+            document.getElementById('build-house-btn').disabled = 
+                gameState.resources.wood < houseCost.wood || gameState.resources.stone < houseCost.stone;
+            
+            const farmCost = gameState.costs.farm;
+            document.getElementById('build-farm-btn').disabled = 
+                gameState.resources.wood < farmCost.wood || gameState.resources.stone < farmCost.stone;
+            
+            const lumberCost = gameState.costs.lumberMill;
+            document.getElementById('build-lumber-btn').disabled = 
+                gameState.resources.wood < lumberCost.wood || gameState.resources.stone < lumberCost.stone;
+            
+            const quarryCost = gameState.costs.quarry;
+            document.getElementById('build-quarry-btn').disabled = 
+                gameState.resources.wood < quarryCost.wood || gameState.resources.stone < quarryCost.stone;
+        }
+
+        // Game loop
+        function gameLoop() {
+            const rates = calculateResourceRates();
+            
+            // Apply resource changes (per second, but we run every 100ms)
+            gameState.resources.food += rates.food / 10;
+            gameState.resources.wood += rates.wood / 10;
+            gameState.resources.stone += rates.stone / 10;
+            
+            // Prevent negative resources
+            gameState.resources.food = Math.max(0, gameState.resources.food);
+            gameState.resources.wood = Math.max(0, gameState.resources.wood);
+            gameState.resources.stone = Math.max(0, gameState.resources.stone);
+            
+            updateDisplay();
+        }
+
+        // Initialize game
+        updateDisplay();
+        setInterval(gameLoop, 100); // Run 10 times per second for smooth updates
+    </script>
+</body>
+</html>
