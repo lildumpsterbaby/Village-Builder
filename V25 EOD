@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Village Builder - Science & Technology Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            background: #2c3e50;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #7f8c8d;
+        }
+        
+        .section h2 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e74c3c;
+            padding-bottom: 5px;
+        }
+        
+        .resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .resource {
+            text-align: center;
+            padding: 8px;
+            background: #34495e;
+            border-radius: 3px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            background: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab.active {
+            background: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        .btn.toggle-off {
+            background: #e74c3c;
+        }
+        
+        .btn.toggle-off:hover {
+            background: #c0392b;
+        }
+        
+        .building, .tech {
+            margin: 10px 0;
+            padding: 10px;
+            background: #34495e;
+            border-radius: 3px;
+            border-left: 3px solid #e67e22;
+        }
+        
+        .tech {
+            border-left-color: #9b59b6;
+        }
+        
+        .job-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+        
+        .warning {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            color: #e74c3c;
+        }
+        
+        .unlocked {
+            opacity: 1;
+        }
+        
+        .locked {
+            opacity: 0.5;
+        }
+        
+        .building-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Village Builder - Science & Technology</h1>
+        
+        <div class="section">
+            <h2>Resources</h2>
+            <div class="resources">
+                <div class="resource">
+                    <strong>Food:</strong> <span id="food">0</span><br>
+                    <small id="food-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>Wood:</strong> <span id="wood">0</span><br>
+                    <small id="wood-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>Stone:</strong> <span id="stone">0</span><br>
+                    <small id="stone-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>Iron:</strong> <span id="iron">0</span><br>
+                    <small id="iron-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>Gold:</strong> <span id="gold">0</span><br>
+                    <small id="gold-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>Science:</strong> <span id="science">0</span><br>
+                    <small id="science-rate">+0/sec</small>
+                </div>
+                <div class="resource">
+                    <strong>People:</strong> <span id="people">0</span><br>
+                    <small>Housed: <span id="housed">0</span></small>
+                </div>
+            </div>
+            
+            <div id="warnings"></div>
+            
+            <button class="btn" onclick="gatherFood()">Gather Food (+1)</button>
+            <button class="btn" id="buy-wood-btn" onclick="buyWood()" disabled>Trade Food for Wood (5 Food)</button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('buildings')">Buildings</button>
+            <button class="tab" onclick="showTab('technology')">Technology</button>
+            <button class="tab" onclick="showTab('jobs')">Jobs</button>
+        </div>
+        
+        <div id="buildings" class="tab-content active">
+            <div class="section">
+                <h2>Buildings</h2>
+                
+                <div class="building">
+                    <strong>Houses:</strong> <span id="houses">0</span><br>
+                    Cost: <span id="house-cost">10</span> Wood<br>
+                    <small>Houses 2 people each</small><br>
+                    <button class="btn" id="build-house-btn" onclick="buildBuilding('house')" disabled>Build House</button>
+                </div>
+                
+                <div class="building">
+                    <strong>Libraries:</strong> <span id="libraries">0</span><br>
+                    Cost: <span id="library-cost">25</span> Wood<br>
+                    <small>Produces science, employs librarians</small><br>
+                    <button class="btn" id="build-library-btn" onclick="buildBuilding('library')" disabled>Build Library</button>
+                </div>
+                
+                <div class="building locked" id="farms-building">
+                    <strong>Farms:</strong> <span id="farms">0</span><br>
+                    Cost: <span id="farm-cost-wood">50</span> Wood<br>
+                    <small>Produces food, employs farmers</small><br>
+                    <button class="btn" id="build-farm-btn" onclick="buildBuilding('farm')" disabled>Build Farm</button>
+                </div>
+                
+                <div class="building locked" id="quarries-building">
+                    <strong>Quarries:</strong> <span id="quarries">0</span><br>
+                    Cost: <span id="quarry-cost">100</span> Wood<br>
+                    <small>Produces stone, employs miners</small><br>
+                    <button class="btn" id="build-quarry-btn" onclick="buildBuilding('quarry')" disabled>Build Quarry</button>
+                </div>
+                
+                <div class="building locked" id="smelters-building">
+                    <strong>Smelters:</strong> <span id="smelters">0</span><br>
+                    Cost: <span id="smelter-cost">250</span> Stone<br>
+                    <small>Automatically produces iron from wood + stone</small><br>
+                    <div class="building-controls">
+                        <button class="btn" id="build-smelter-btn" onclick="buildBuilding('smelter')" disabled>Build Smelter</button>
+                        <button class="btn" id="toggle-smelters-btn" onclick="toggleSmelters()" disabled>Toggle All Smelters</button>
+                    </div>
+                    <div><small id="smelter-status">Status: ON</small></div>
+                </div>
+                
+                <div class="building locked" id="lumber-mills-building">
+                    <strong>Lumber Mills:</strong> <span id="lumber-mills">0</span><br>
+                    Cost: <span id="lumber-cost-wood">150</span> Wood + <span id="lumber-cost-stone">150</span> Stone + <span id="lumber-cost-iron">100</span> Iron<br>
+                    <small>Produces wood, employs lumberjacks</small><br>
+                    <button class="btn" id="build-lumber-btn" onclick="buildBuilding('lumberMill')" disabled>Build Lumber Mill</button>
+                </div>
+                
+                <div class="building locked" id="alchemical-building">
+                    <strong>Alchemical Facilities:</strong> <span id="alchemical-facilities">0</span><br>
+                    Cost: <span id="alchemical-cost-wood">500</span> Wood + <span id="alchemical-cost-stone">300</span> Stone + <span id="alchemical-cost-iron">200</span> Iron<br>
+                    <small>Converts iron to gold, employs alchemists</small><br>
+                    <button class="btn" id="build-alchemical-btn" onclick="buildBuilding('alchemicalFacility')" disabled>Build Alchemical Facility</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="technology" class="tab-content">
+            <div class="section">
+                <h2>Technology Research</h2>
+                
+                <div class="tech" id="farming-tech">
+                    <strong>Agriculture</strong> - Cost: 100 Science<br>
+                    <small>Unlocks farms and farming jobs</small><br>
+                    <button class="btn" id="research-farming-btn" onclick="researchTech('farming')" disabled>Research</button>
+                </div>
+                
+                <div class="tech" id="mining-tech">
+                    <strong>Mining</strong> - Cost: 250 Science<br>
+                    <small>Unlocks quarries and mining jobs</small><br>
+                    <button class="btn" id="research-mining-btn" onclick="researchTech('mining')" disabled>Research</button>
+                </div>
+                
+                <div class="tech" id="smelting-tech">
+                    <strong>Smelting</strong> - Cost: 500 Science<br>
+                    <small>Unlocks smelters for iron production</small><br>
+                    <button class="btn" id="research-smelting-btn" onclick="researchTech('smelting')" disabled>Research</button>
+                </div>
+                
+                <div class="tech" id="lumber-tech">
+                    <strong>Advanced Forestry</strong> - Cost: 500 Science<br>
+                    <small>Unlocks lumber mills and lumberjack jobs</small><br>
+                    <button class="btn" id="research-lumber-btn" onclick="researchTech('lumber')" disabled>Research</button>
+                </div>
+                
+                <div class="tech" id="alchemy-tech">
+                    <strong>Alchemy</strong> - Cost: 1000 Science<br>
+                    <small>Unlocks alchemical facilities and alchemist jobs</small><br>
+                    <button class="btn" id="research-alchemy-btn" onclick="researchTech('alchemy')" disabled>Research</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="jobs" class="tab-content">
+            <div class="section">
+                <h2>Job Assignments</h2>
+                <p><strong>Unemployed:</strong> <span id="unemployed">0</span></p>
+                
+                <div class="job-controls">
+                    <span>Librarians: <span id="librarians">0</span> / <span id="max-librarians">0</span></span>
+                    <button class="btn" onclick="assignJob('librarian', -1)">-</button>
+                    <button class="btn" onclick="assignJob('librarian', 1)">+</button>
+                </div>
+                
+                <div class="job-controls locked" id="farmer-job">
+                    <span>Farmers: <span id="farmers">0</span> / <span id="max-farmers">0</span></span>
+                    <button class="btn" onclick="assignJob('farmer', -1)">-</button>
+                    <button class="btn" onclick="assignJob('farmer', 1)">+</button>
+                </div>
+                
+                <div class="job-controls locked" id="miner-job">
+                    <span>Miners: <span id="miners">0</span> / <span id="max-miners">0</span></span>
+                    <button class="btn" onclick="assignJob('miner', -1)">-</button>
+                    <button class="btn" onclick="assignJob('miner', 1)">+</button>
+                </div>
+                
+                <div class="job-controls locked" id="lumberjack-job">
+                    <span>Lumberjacks: <span id="lumberjacks">0</span> / <span id="max-lumberjacks">0</span></span>
+                    <button class="btn" onclick="assignJob('lumberjack', -1)">-</button>
+                    <button class="btn" onclick="assignJob('lumberjack', 1)">+</button>
+                </div>
+                
+                <div class="job-controls locked" id="alchemist-job">
+                    <span>Alchemists: <span id="alchemists">0</span> / <span id="max-alchemists">0</span></span>
+                    <button class="btn" onclick="assignJob('alchemist', -1)">-</button>
+                    <button class="btn" onclick="assignJob('alchemist', 1)">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            resources: {
+                food: 0, wood: 0, stone: 0, iron: 0, gold: 0, science: 0, people: 0
+            },
+            buildings: {
+                houses: 0, libraries: 0, farms: 0, quarries: 0, smelters: 0, lumberMills: 0, alchemicalFacilities: 0
+            },
+            jobs: {
+                librarians: 0, farmers: 0, miners: 0, lumberjacks: 0, alchemists: 0
+            },
+            technology: {
+                farming: false, mining: false, smelting: false, lumber: false, alchemy: false
+            },
+            smeltersActive: true,
+            costs: {
+                house: { wood: 10 },
+                library: { wood: 25 },
+                farm: { wood: 50 },
+                quarry: { wood: 100 },
+                smelter: { stone: 250 },
+                lumberMill: { wood: 150, stone: 150, iron: 100 },
+                alchemicalFacility: { wood: 500, stone: 300, iron: 200 }
+            },
+            techCosts: {
+                farming: 100, mining: 250, smelting: 500, lumber: 500, alchemy: 1000
+            }
+        };
+
+        // Building type mapping
+        const buildingMap = {
+            'house': 'houses', 'library': 'libraries', 'farm': 'farms',
+            'quarry': 'quarries', 'smelter': 'smelters', 'lumberMill': 'lumberMills',
+            'alchemicalFacility': 'alchemicalFacilities'
+        };
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function gatherFood() {
+            gameState.resources.food++;
+            updateDisplay();
+        }
+
+        function buyWood() {
+            if (gameState.resources.food >= 5) {
+                gameState.resources.food -= 5;
+                gameState.resources.wood++;
+                updateDisplay();
+            }
+        }
+
+        function toggleSmelters() {
+            gameState.smeltersActive = !gameState.smeltersActive;
+            updateDisplay();
+        }
+
+        function buildBuilding(type) {
+            const cost = gameState.costs[type];
+            const buildingKey = buildingMap[type];
+            
+            // Check if we can afford it
+            for (const resource in cost) {
+                if (gameState.resources[resource] < cost[resource]) return;
+            }
+            
+            // Deduct resources and add building
+            for (const resource in cost) {
+                gameState.resources[resource] -= cost[resource];
+            }
+            gameState.buildings[buildingKey]++;
+            
+            // Add people for houses
+            if (type === 'house') {
+                gameState.resources.people += 2;
+            }
+            
+            // All buildings now use *1.5 +1 scaling
+            for (const resource in cost) {
+                gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] * 1.5 + 1);
+            }
+            
+            updateDisplay();
+        }
+
+        function researchTech(tech) {
+            if (gameState.resources.science >= gameState.techCosts[tech]) {
+                gameState.resources.science -= gameState.techCosts[tech];
+                gameState.technology[tech] = true;
+                updateDisplay();
+            }
+        }
+
+        function assignJob(jobType, change) {
+            const unemployed = getUnemployedCount();
+            const maxWorkers = getMaxWorkersForJob(jobType);
+            const jobKey = jobType + 's';
+            
+            if (change > 0 && unemployed > 0 && gameState.jobs[jobKey] < maxWorkers) {
+                gameState.jobs[jobKey]++;
+            } else if (change < 0 && gameState.jobs[jobKey] > 0) {
+                gameState.jobs[jobKey]--;
+            }
+            
+            updateDisplay();
+        }
+
+        function getMaxWorkersForJob(jobType) {
+            const buildingMap = {
+                'librarian': 'libraries', 'farmer': 'farms', 'miner': 'quarries',
+                'lumberjack': 'lumberMills', 'alchemist': 'alchemicalFacilities'
+            };
+            return (gameState.buildings[buildingMap[jobType]] || 0) * 2;
+        }
+
+        function getUnemployedCount() {
+            return gameState.resources.people - Object.values(gameState.jobs).reduce((a, b) => a + b, 0);
+        }
+
+        function calculateResourceRates() {
+            const rates = { food: 0, wood: 0, stone: 0, iron: 0, gold: 0, science: 0 };
+            
+            // Production rates
+            rates.science += gameState.buildings.libraries * 0.2 + gameState.jobs.librarians * 0.3;
+            
+            if (gameState.technology.farming) {
+                rates.food += gameState.buildings.farms * 0.3 + gameState.jobs.farmers * 0.8;
+            }
+            
+            if (gameState.technology.mining) {
+                rates.stone += gameState.jobs.miners * 0.4;
+            }
+            
+            if (gameState.technology.smelting && gameState.smeltersActive) {
+                const smelterProduction = gameState.buildings.smelters * 0.3;
+                const consumption = smelterProduction * 0.8;
+                
+                if (gameState.resources.wood >= consumption && gameState.resources.stone >= consumption) {
+                    rates.iron += smelterProduction;
+                    rates.wood -= consumption;
+                    rates.stone -= consumption;
+                }
+            }
+            
+            if (gameState.technology.lumber) {
+                rates.wood += gameState.buildings.lumberMills * 0.2 + gameState.jobs.lumberjacks * 0.6;
+            }
+            
+            if (gameState.technology.alchemy) {
+                const alchemyProduction = gameState.jobs.alchemists * 0.1;
+                const ironConsumption = alchemyProduction * 5;
+                
+                if (gameState.resources.iron >= ironConsumption) {
+                    rates.gold += alchemyProduction;
+                    rates.iron -= ironConsumption;
+                }
+            }
+            
+            // Food consumption
+            rates.food -= gameState.resources.people * 0.25;
+            
+            return rates;
+        }
+
+        function updateDisplay() {
+            // Update resources
+            Object.keys(gameState.resources).forEach(resource => {
+                document.getElementById(resource).textContent = Math.floor(gameState.resources[resource]);
+            });
+            
+            // Update rates
+            const rates = calculateResourceRates();
+            Object.keys(rates).forEach(resource => {
+                const element = document.getElementById(resource + '-rate');
+                if (element) {
+                    element.textContent = `${rates[resource] >= 0 ? '+' : ''}${rates[resource].toFixed(1)}/sec`;
+                }
+            });
+            
+            // Update buildings
+            Object.keys(gameState.buildings).forEach(building => {
+                const element = document.getElementById(building.replace(/([A-Z])/g, '-$1').toLowerCase());
+                if (element) element.textContent = gameState.buildings[building];
+            });
+            
+            // Update costs
+            Object.keys(gameState.costs).forEach(building => {
+                const cost = gameState.costs[building];
+                Object.keys(cost).forEach(resource => {
+                    const costId = building.replace(/([A-Z])/g, '-$1').toLowerCase() + '-cost' + 
+                                  (Object.keys(cost).length > 1 ? '-' + resource : '');
+                    const element = document.getElementById(costId);
+                    if (element) element.textContent = cost[resource];
+                });
+            });
+            
+            // Update jobs
+            Object.keys(gameState.jobs).forEach(job => {
+                const element = document.getElementById(job);
+                if (element) element.textContent = gameState.jobs[job];
+                
+                const maxElement = document.getElementById('max-' + job);
+                if (maxElement) maxElement.textContent = getMaxWorkersForJob(job.slice(0, -1));
+            });
+            
+            document.getElementById('unemployed').textContent = getUnemployedCount();
+            document.getElementById('housed').textContent = Math.min(gameState.resources.people, gameState.buildings.houses * 2);
+            
+            // Update smelter status
+            const statusElement = document.getElementById('smelter-status');
+            if (statusElement) {
+                statusElement.textContent = `Status: ${gameState.smeltersActive ? 'ON' : 'OFF'}`;
+            }
+            
+            updateTechnologyVisibility();
+            updateWarnings();
+            updateButtonStates();
+        }
+
+        function updateTechnologyVisibility() {
+            const techBuildings = {
+                farming: 'farms-building', mining: 'quarries-building',
+                smelting: 'smelters-building', lumber: 'lumber-mills-building',
+                alchemy: 'alchemical-building'
+            };
+            
+            const techJobs = {
+                farming: 'farmer-job', mining: 'miner-job',
+                lumber: 'lumberjack-job', alchemy: 'alchemist-job'
+            };
+            
+            Object.keys(techBuildings).forEach(tech => {
+                if (gameState.technology[tech]) {
+                    document.getElementById(techBuildings[tech]).classList.remove('locked');
+                    if (techJobs[tech]) {
+                        document.getElementById(techJobs[tech]).classList.remove('locked');
+                    }
+                }
+            });
+        }
+
+        function updateWarnings() {
+            const warnings = [];
+            
+            if (gameState.resources.people > gameState.buildings.houses * 2) {
+                warnings.push('⚠️ Some people are homeless! Build more houses.');
+            }
+            
+            const rates = calculateResourceRates();
+            if (rates.food < 0 || gameState.resources.food <= 0) {
+                warnings.push('⚠️ People are starving and dying! You need more food production.');
+            }
+            
+            document.getElementById('warnings').innerHTML = 
+                warnings.map(w => `<div class="warning">${w}</div>`).join('');
+        }
+
+        function updateButtonStates() {
+            // Trading buttons
+            document.getElementById('buy-wood-btn').disabled = gameState.resources.food < 5;
+            
+            // Building buttons
+            Object.keys(gameState.costs).forEach(building => {
+                const cost = gameState.costs[building];
+                const btnId = 'build-' + building.replace(/([A-Z])/g, '-$1').toLowerCase() + '-btn';
+                const btn = document.getElementById(btnId);
+                
+                if (btn) {
+                    btn.disabled = !Object.keys(cost).every(resource => 
+                        gameState.resources[resource] >= cost[resource]);
+                }
+            });
+            
+            // Technology buttons
+            Object.keys(gameState.techCosts).forEach(tech => {
+                const btn = document.getElementById('research-' + tech + '-btn');
+                if (btn) {
+                    btn.disabled = gameState.resources.science < gameState.techCosts[tech] || gameState.technology[tech];
+                    if (gameState.technology[tech]) btn.textContent = 'Researched';
+                }
+            });
+            
+            // Smelter toggle button
+            const toggleBtn = document.getElementById('toggle-smelters-btn');
+            if (toggleBtn) {
+                toggleBtn.disabled = !gameState.technology.smelting || gameState.buildings.smelters === 0;
+                toggleBtn.textContent = gameState.smeltersActive ? 'Turn OFF Smelters' : 'Turn ON Smelters';
+                toggleBtn.className = gameState.smeltersActive ? 'btn toggle-off' : 'btn';
+            }
+        }
+
+        function gameLoop() {
+            const rates = calculateResourceRates();
+            
+            // Apply resource changes
+            Object.keys(rates).forEach(resource => {
+                gameState.resources[resource] += rates[resource] / 10;
+            });
+            
+            // Handle starvation
+            if (gameState.resources.food <= 0) {
+                gameState.resources.food = 0;
+                const foodDeficit = Math.abs(rates.food);
+                if (foodDeficit > 0) {
+                    const peopleToRemove = Math.ceil(foodDeficit / 0.25);
+                    gameState.resources.people = Math.max(0, gameState.resources.people - peopleToRemove);
+                    
+                    // Remove workers if needed
+                    const totalWorkers = Object.values(gameState.jobs).reduce((a, b) => a + b, 0);
+                    if (totalWorkers > gameState.resources.people) {
+                        const jobTypes = Object.keys(gameState.jobs);
+                        while (totalWorkers > gameState.resources.people) {
+                            const randomJob = jobTypes[Math.floor(Math.random() * jobTypes.length)];
+                            if (gameState.jobs[randomJob] > 0) {
+                                gameState.jobs[randomJob]--;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Prevent negative resources (except food)
+            Object.keys(gameState.resources).forEach(resource => {
+                if (resource !== 'food') {
+                    gameState.resources[resource] = Math.max(0, gameState.resources[resource]);
+                }
+            });
+            
+            updateDisplay();
+        }
+
+        // Initialize and start game loop
+        updateDisplay();
+        setInterval(gameLoop, 100);
+    </script>
+</body>
+</html>
