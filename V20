@@ -214,35 +214,35 @@
                 
                 <div class="building locked" id="farms-building">
                     <strong>Farms:</strong> <span id="farms">0</span><br>
-                    Cost: <span id="farm-cost-wood">15</span> Wood + <span id="farm-cost-stone">5</span> Stone<br>
+                    Cost: <span id="farm-cost-wood">50</span> Wood<br>
                     <small>Produces food, employs farmers</small><br>
                     <button class="btn" id="build-farm-btn" onclick="buildBuilding('farm')" disabled>Build Farm</button>
                 </div>
                 
                 <div class="building locked" id="quarries-building">
                     <strong>Quarries:</strong> <span id="quarries">0</span><br>
-                    Cost: <span id="quarry-cost">35</span> Wood<br>
+                    Cost: <span id="quarry-cost">100</span> Wood<br>
                     <small>Produces stone, employs miners</small><br>
                     <button class="btn" id="build-quarry-btn" onclick="buildBuilding('quarry')" disabled>Build Quarry</button>
                 </div>
                 
                 <div class="building locked" id="smelters-building">
                     <strong>Smelters:</strong> <span id="smelters">0</span><br>
-                    Cost: <span id="smelter-cost">20</span> Stone<br>
+                    Cost: <span id="smelter-cost">250</span> Stone<br>
                     <small>Automatically produces iron from wood + stone</small><br>
                     <button class="btn" id="build-smelter-btn" onclick="buildBuilding('smelter')" disabled>Build Smelter</button>
                 </div>
                 
                 <div class="building locked" id="lumber-mills-building">
                     <strong>Lumber Mills:</strong> <span id="lumber-mills">0</span><br>
-                    Cost: <span id="lumber-cost-wood">25</span> Wood + <span id="lumber-cost-stone">15</span> Stone + <span id="lumber-cost-iron">10</span> Iron<br>
+                    Cost: <span id="lumber-cost-wood">150</span> Wood + <span id="lumber-cost-stone">150</span> Stone + <span id="lumber-cost-iron">100</span> Iron<br>
                     <small>Produces wood, employs lumberjacks</small><br>
                     <button class="btn" id="build-lumber-btn" onclick="buildBuilding('lumberMill')" disabled>Build Lumber Mill</button>
                 </div>
                 
                 <div class="building locked" id="alchemical-building">
                     <strong>Alchemical Facilities:</strong> <span id="alchemical-facilities">0</span><br>
-                    Cost: <span id="alchemical-cost-wood">50</span> Wood + <span id="alchemical-cost-stone">30</span> Stone + <span id="alchemical-cost-iron">20</span> Iron<br>
+                    Cost: <span id="alchemical-cost-wood">500</span> Wood + <span id="alchemical-cost-stone">300</span> Stone + <span id="alchemical-cost-iron">200</span> Iron<br>
                     <small>Converts iron to gold, employs alchemists</small><br>
                     <button class="btn" id="build-alchemical-btn" onclick="buildBuilding('alchemicalFacility')" disabled>Build Alchemical Facility</button>
                 </div>
@@ -361,11 +361,11 @@
             costs: {
                 house: { wood: 10 },
                 library: { wood: 25 },
-                farm: { wood: 15, stone: 5 },
-                quarry: { wood: 35 },
-                smelter: { stone: 20 },
-                lumberMill: { wood: 25, stone: 15, iron: 10 },
-                alchemicalFacility: { wood: 50, stone: 30, iron: 20 }
+                farm: { wood: 50 },
+                quarry: { wood: 100 },
+                smelter: { stone: 250 },
+                lumberMill: { wood: 100, stone: 150, iron: 100 },
+                alchemicalFacility: { wood: 500, stone: 300, iron: 200 }
             },
             techCosts: {
                 farming: 100,
@@ -427,7 +427,7 @@
                 
                 // Increase costs
                 for (const resource in cost) {
-                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] * 1.15);
+                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] +3 * 1.15);
                 }
                 
                 updateDisplay();
@@ -523,7 +523,7 @@
             }
             
             // Food consumption
-            rates.food -= gameState.resources.people * 0.1;
+            rates.food -= gameState.resources.people * 0.25;
             
             return rates;
         }
@@ -753,7 +753,7 @@ function buildBuilding(type) {
                 
                 // Increase costs
                 for (const resource in cost) {
-                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] * 1.15);
+                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] +3 * 1.15);
                 }
                 
                 updateDisplay();
@@ -799,7 +799,7 @@ function buildBuilding(type) {
                 
                 // Increase costs
                 for (const resource in cost) {
-                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] * 1.15);
+                    gameState.costs[type][resource] = Math.floor(gameState.costs[type][resource] +3 * 1.15);
                 }
                 
                 updateDisplay();
